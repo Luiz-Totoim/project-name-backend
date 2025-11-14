@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: project-name-backend
     env: node
@@ -6,6 +6,7 @@
     region: oregon
     buildCommand: npm ci
     startCommand: node app.js
+    healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -15,4 +16,4 @@
       - key: MONGO_URL
         sync: false
       - key: CORS_ORIGINS
-        value: https://luiz-totoim.github.io
+        value: https://luiz-totoim.github.io,http://localhost:3000
