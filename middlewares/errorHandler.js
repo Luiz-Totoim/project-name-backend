@@ -4,7 +4,8 @@ const { HTTP_STATUS, ERROR_MESSAGES } = require('../utils/constants');
 module.exports = (err, req, res, next) => {
   // Celebrate validation errors
   if (isCelebrateError(err)) {
-    const errorBody = err.details.get('body') || err.details.get('params') || err.details.get('headers');
+    const errorBody =
+      err.details.get('body') || err.details.get('params') || err.details.get('headers');
     const errorMessage = errorBody?.details[0]?.message || ERROR_MESSAGES.VALIDATION_ERROR;
     return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: errorMessage });
   }
@@ -12,7 +13,9 @@ module.exports = (err, req, res, next) => {
   // Mongoose validation errors
   if (err.name === 'ValidationError') {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      message: Object.values(err.errors).map((error) => error.message).join(', '),
+      message: Object.values(err.errors)
+        .map((error) => error.message)
+        .join(', '),
     });
   }
 
@@ -29,9 +32,8 @@ module.exports = (err, req, res, next) => {
   // Custom app errors
   const { statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR, message } = err;
   res.status(statusCode).json({
-    message: statusCode === HTTP_STATUS.INTERNAL_SERVER_ERROR
-      ? ERROR_MESSAGES.INTERNAL_ERROR
-      : message,
+    message:
+      statusCode === HTTP_STATUS.INTERNAL_SERVER_ERROR ? ERROR_MESSAGES.INTERNAL_ERROR : message,
   });
 
   return next();

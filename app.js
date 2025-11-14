@@ -13,7 +13,8 @@ const limiter = require('./middlewares/rateLimiter');
 const app = express();
 
 // Conectar ao MongoDB
-mongoose.connect(MONGO_URL)
+mongoose
+  .connect(MONGO_URL)
   .then(() => console.log('✅ Conectado ao MongoDB'))
   .catch((err) => console.error('❌ Erro ao conectar ao MongoDB:', err));
 
