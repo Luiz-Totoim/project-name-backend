@@ -11,6 +11,22 @@ const errorHandler = require('./middlewares/errorHandler');
 const limiter = require('./middlewares/rateLimiter');
 
 const app = express();
+const defaultOrigins = ['http://localhost:3000', 'https://luiz-totoim.github.io'];
+const envOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+
 
 // Conectar ao MongoDB
 mongoose
@@ -20,8 +36,8 @@ mongoose
 
 // Middlewares de segurança
 app.use(helmet());
-app.use(cors());
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Rate limiting
 app.use(limiter);
