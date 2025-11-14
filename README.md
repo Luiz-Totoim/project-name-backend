@@ -1,284 +1,133 @@
-# NewsExplorer Backend API
+# NewsExplorer Backend
 
-Backend Node.js + Express + MongoDB com autenticação JWT para o projeto NewsExplorer.
+API REST com autenticação JWT para salvar artigos de notícias.
 
-## 🚀 Stack
+## Stack
+- Node.js 18.x + Express 5
+- MongoDB (Mongoose)
+- JWT (jsonwebtoken) + bcrypt
+- Validação: Celebrate/Joi
+- Segurança: Helmet, CORS, rate limiting
+- Logs: Winston
 
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT (jsonwebtoken)
-- bcryptjs (hash de senhas)
-- Celebrate/Joi (validação)
-- Winston (logging)
-- Helmet (segurança)
-- Rate Limiting
+## Endpoints
 
-## 📦 Setup
+### Autenticação (públicos)
+- `POST /api/signup` - criar usuário
+  - Body: `{ "name": "string", "email": "email", "password": "string>=8" }`
+- `POST /api/signin` - login
+  - Body: `{ "email": "email", "password": "string" }`
+  - Response: `{ "token": "JWT..." }`
 
-### 1. Instalar dependências
+### Usuários (protegidos)
+- `GET /api/users/me` - perfil do usuário logado
+  - Header: `Authorization: Bearer <token>`
 
-```bash
-npm install
-```
+### Artigos (protegidos)
+- `GET /api/articles` - listar artigos salvos
+- `POST /api/articles` - salvar artigo
+  - Body: `{ "keyword", "title", "text", "date", "source", "link", "image" }`
+- `DELETE /api/articles/:articleId` - deletar artigo
 
-### 2. Configurar variáveis de ambiente
+### Health Check
+- `GET /healthz` - status e DB readiness
 
-Crie um arquivo `.env` baseado em `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Edite o `.env` com suas configurações:
+## Variáveis de Ambiente
 
 ```env
-MONGO_URL=mongodb://localhost:27017/newsexplorer
-JWT_SECRET=sua-chave-secreta-super-segura
+NODE_ENV=production
 PORT=3001
-NODE_ENV=development
+MONGO_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/<db>?retryWrites=true&w=majority
+JWT_SECRET=<secure-random-string>
+CORS_ORIGINS=https://seu-frontend.com,http://localhost:3000
 ```
 
-### 3. MongoDB
+**Dev local**: use `MONGO_URL=memory` para rodar com mongodb-memory-server (não persistente).
 
-Certifique-se de que o MongoDB está rodando localmente ou use MongoDB Atlas (cloud).
+## Deploy no Render
 
-**Local:**
-```bash
-mongod
-```
+### 1. Criar serviço via Blueprint
+- Acesse: [Render Blueprints](https://dashboard.render.com/select-repo?type=blueprint)
+- Conecte o GitHub e selecione `Luiz-Totoim/project-name-backend`
+- Confirme as configurações do `render.yaml`:
+  - Build: `npm ci`
+  - Start: `node app.js`
+  - Health check: `/healthz`
+  - Plan: Free
+- **Variáveis** (vêm do blueprint, mas revise):
+  - `MONGO_URL`: default `memory` (trocar por Atlas depois)
+  - `JWT_SECRET`: gerado automaticamente
+  - `CORS_ORIGINS`: `https://luiz-totoim.github.io,http://localhost:3000`
+  - `NODE_ENV`: `production`
+- Clique em **Apply** para criar
 
-**Atlas:** Use a string de conexão fornecida pelo MongoDB Atlas no `.env`.
+### 2. Aguardar deploy
+- Build leva ~2-3 min
+- Health check em `/healthz` deve ficar **Healthy**
 
-### 4. Rodar o servidor
+### 3. Copiar URL pública
+- Ex: `https://project-name-backend.onrender.com`
+- Testar: `curl https://<sua-url>/healthz`
 
-**Desenvolvimento (com hot reload):**
-```bash
-npm run dev
-```
+### 4. (Opcional) Trocar para MongoDB Atlas
+- No Render  Environment  editar `MONGO_URL`
+- Colar string SRV do Atlas
+- Salvar e aguardar redeploy automático
 
-**Produção:**
-```bash
-npm start
-```
-
-O servidor estará disponível em `http://localhost:3001`
-
-## 📋 Rotas da API
-
-### Autenticação (públicas)
-
-#### POST /api/signup
-Cria um novo usuário.
-
-**Body:**
-```json
-{
-  "email": "usuario@email.com",
-  "password": "senha123",
-  "name": "Nome do Usuário"
-}
-```
-
-**Resposta (201):**
-```json
-{
-  "_id": "...",
-  "email": "usuario@email.com",
-  "name": "Nome do Usuário"
-}
-```
-
-#### POST /api/signin
-Autentica e retorna JWT.
-
-**Body:**
-```json
-{
-  "email": "usuario@email.com",
-  "password": "senha123"
-}
-```
-
-**Resposta (200):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-### Usuários (protegidas - requer token)
-
-#### GET /api/users/me
-Retorna informações do usuário autenticado.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Resposta (200):**
-```json
-{
-  "_id": "...",
-  "email": "usuario@email.com",
-  "name": "Nome do Usuário"
-}
-```
-
-### Artigos (protegidas - requer token)
-
-#### GET /api/articles
-Lista todos os artigos salvos pelo usuário.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Resposta (200):**
-```json
-[
-  {
-    "_id": "...",
-    "keyword": "react",
-    "title": "Título do artigo",
-    "text": "Descrição...",
-    "date": "2025-11-14",
-    "source": "Nome da Fonte",
-    "link": "https://...",
-    "image": "https://...",
-    "owner": "..."
-  }
-]
-```
-
-#### POST /api/articles
-Salva um novo artigo.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Body:**
-```json
-{
-  "keyword": "react",
-  "title": "Título do artigo",
-  "text": "Descrição do artigo",
-  "date": "2025-11-14",
-  "source": "Nome da Fonte",
-  "link": "https://exemplo.com/artigo",
-  "image": "https://exemplo.com/imagem.jpg"
-}
-```
-
-**Resposta (201):**
-```json
-{
-  "_id": "...",
-  "keyword": "react",
-  "title": "Título do artigo",
-  ...
-}
-```
-
-#### DELETE /api/articles/:articleId
-Remove um artigo salvo (apenas o dono pode deletar).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Resposta (200):**
-```json
-{
-  "_id": "...",
-  "keyword": "react",
-  ...
-}
-```
-
-## 🔒 Segurança
-
-- ✅ Senhas armazenadas com hash (bcryptjs)
-- ✅ JWT para autenticação stateless
-- ✅ Helmet para headers de segurança
-- ✅ Rate limiting (100 req/15min por IP)
-- ✅ CORS configurado
-- ✅ Validação de entrada (Celebrate/Joi)
-
-## 📝 Scripts
+## Scripts
 
 ```bash
-npm start          # Inicia servidor (produção)
-npm run dev        # Inicia servidor com nodemon (dev)
-npm run lint       # Verifica ESLint
+npm start          # produção
+npm run dev        # dev com nodemon
+npm run lint       # ESLint
+npm run lint:fix   # fix automático
 ```
 
-## ✅ Checklist de Deploy
-
-- [ ] Configurar variáveis de ambiente no servidor
-- [ ] `MONGO_URL` apontando para MongoDB Atlas ou servidor
-- [ ] `JWT_SECRET` forte e único em produção
-- [ ] `NODE_ENV=production`
-- [ ] Certificar HTTPS configurado
-- [ ] Testar todas as rotas
-
-## 🌐 Deploy
-
-### Railway/Render/Heroku
-
-1. Criar novo projeto
-2. Conectar repositório GitHub
-3. Adicionar variáveis de ambiente:
-   - `MONGO_URL`
-   - `JWT_SECRET`
-   - `NODE_ENV=production`
-4. Deploy automático
-
-## 📁 Estrutura de Arquivos
+## Estrutura
 
 ```
-├── app.js                  # Entry point
-├── config/
-│   └── index.js           # Configurações
-├── controllers/
-│   ├── users.js           # Lógica de usuários
-│   └── articles.js        # Lógica de artigos
-├── middlewares/
-│   ├── auth.js            # Autenticação JWT
-│   ├── errorHandler.js    # Tratamento de erros
-│   ├── logger.js          # Winston logger
-│   ├── rateLimiter.js     # Rate limiting
-│   └── validation.js      # Validação Celebrate
-├── models/
-│   ├── user.js            # Schema User
-│   └── article.js         # Schema Article
-├── routes/
-│   ├── index.js           # Router principal
-│   ├── auth.js            # Rotas de auth
-│   ├── users.js           # Rotas de users
-│   └── articles.js        # Rotas de articles
-└── utils/
-    ├── constants.js       # Constantes
-    └── errors/            # Classes de erro customizadas
+ app.js                 # Entry point
+ config/
+    index.js          # Env config
+ controllers/          # Lógica de negócio
+ middlewares/
+    auth.js           # JWT verificação
+    errorHandler.js   # Error handler central
+    validation.js     # Celebrate schemas
+ models/               # Mongoose schemas
+ routes/               # Express routers
+ utils/
+    errors/           # Custom error classes
+ render.yaml           # Blueprint Render
 ```
 
-## 🐛 Troubleshooting
+## Testes Manuais (após deploy)
 
-**Erro de conexão MongoDB:**
-- Verifique se MongoDB está rodando
-- Confira a string de conexão no `.env`
+```bash
+BASE=https://<sua-url>.onrender.com
 
-**Token inválido:**
-- Verifique se o JWT_SECRET é o mesmo entre requisições
-- Token expira em 7 dias
+# Health
+curl $BASE/healthz
 
-**Erro 409 (Conflict):**
-- Email já cadastrado
+# Signup
+curl -X POST $BASE/api/signup \\
+  -H 'Content-Type: application/json' \\
+  -d '{\"name\":\"Test\",\"email\":\"test@ex.com\",\"password\":\"Secret123!\"}'
 
-**Erro 401 (Unauthorized):**
-- Token ausente ou inválido
-- Credenciais incorretas
+# Signin
+curl -X POST $BASE/api/signin \\
+  -H 'Content-Type: application/json' \\
+  -d '{\"email\":\"test@ex.com\",\"password\":\"Secret123!\"}'
+
+# Me (use token do signin)
+curl $BASE/api/users/me -H 'Authorization: Bearer <TOKEN>'
+
+# Artigos
+curl -X POST $BASE/api/articles \\
+  -H 'Authorization: Bearer <TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -d '{\"keyword\":\"tech\",\"title\":\"Hello\",\"text\":\"...\",\"date\":\"2025-11-14\",\"source\":\"Test\",\"link\":\"https://example.com\",\"image\":\"https://example.com/i.jpg\"}'
+```
+
+## Licença
+ISC
