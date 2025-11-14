@@ -38,7 +38,7 @@ async function connectDB() {
       const mongod = await MongoMemoryServer.create();
       const uri = mongod.getUri();
       await mongoose.connect(uri);
-      console.log(' Conectado ao MongoDB em memória');
+      console.log(' Conectado ao MongoDB em memÃ³ria');
     } else {
       await mongoose.connect(MONGO_URL);
       console.log(' Conectado ao MongoDB');
@@ -49,10 +49,9 @@ async function connectDB() {
 }
 
 connectDB();
-// Middlewares de segurança
+// Middlewares de seguranÃ§a
 app.use(helmet());
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Rate limiting
 app.use(limiter);
@@ -74,5 +73,5 @@ app.use(errors());
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`ðŸš€ Servidor rodando na porta ${PORT}`);
 });
