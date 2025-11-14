@@ -29,11 +29,26 @@ const corsOptions = {
 
 
 // Conectar ao MongoDB
-mongoose
-  .connect(MONGO_URL)
-  .then(() => console.log('✅ Conectado ao MongoDB'))
-  .catch((err) => console.error('❌ Erro ao conectar ao MongoDB:', err));
 
+
+async function connectDB() {
+  try {
+    if (process.env.MONGO_URL === 'memory') {
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongod = await MongoMemoryServer.create();
+      const uri = mongod.getUri();
+      await mongoose.connect(uri);
+      console.log(' Conectado ao MongoDB em memória');
+    } else {
+      await mongoose.connect(MONGO_URL);
+      console.log(' Conectado ao MongoDB');
+    }
+  } catch (err) {
+    console.error(' Erro ao conectar ao MongoDB:', err);
+  }
+}
+
+connectDB();
 // Middlewares de segurança
 app.use(helmet());
 app.use(cors(corsOptions));
