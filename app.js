@@ -38,7 +38,7 @@ async function connectDB() {
       const mongod = await MongoMemoryServer.create();
       const uri = mongod.getUri();
       await mongoose.connect(uri);
-      console.log(' Conectado ao MongoDB em memÃ³ria');
+      console.log(' Conectado ao MongoDB em memÃƒÂ³ria');
     } else {
       await mongoose.connect(MONGO_URL);
       console.log(' Conectado ao MongoDB');
@@ -49,7 +49,7 @@ async function connectDB() {
 }
 
 connectDB();
-// Middlewares de seguranÃ§a
+// Middlewares de seguranÃƒÂ§a
 app.use(helmet());
 app.use(cors(corsOptions));
 
@@ -64,6 +64,14 @@ app.use(requestLogger);
 
 // Rotas
 app.use('/api', routes);
+// Healthcheck simples para deploys
+app.get('/healthz', (req, res) => {
+  const state = require('mongoose').connection.readyState;
+  // 1=connected, 2=connecting
+  const ok = state === 1 || state === 2;
+  res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', dbState: state });
+});
+
 
 // Error logger
 app.use(errorLogger);
@@ -73,5 +81,6 @@ app.use(errors());
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`ðŸš€ Servidor rodando na porta ${PORT}`);
+  console.log(`Ã°Å¸Å¡â‚¬ Servidor rodando na porta ${PORT}`);
 });
+
