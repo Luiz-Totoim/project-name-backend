@@ -19,11 +19,12 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies (production only)
-        run: npm ci --omit=dev
-
-      - name: Install ESLint and plugins
-        run: npm install --save-dev eslint eslint-config-airbnb-base eslint-config-prettier eslint-plugin-import prettier
+      - name: Clean install dependencies
+        run: |
+          npm ci || npm install
+        continue-on-error: false
+        env:
+          SKIP_POSTINSTALL: true
 
       - name: Run ESLint
-        run: npx eslint .
+        run: npm run lint
